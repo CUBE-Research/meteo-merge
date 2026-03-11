@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unifica file CSV meteo in un unico file CSV.
+Merge weather CSV files into a single CSV file.
 
 Usage:
     python merge_meteo_csv.py <input_directory> <output_filename> [--interpolation METHOD]
@@ -18,21 +18,21 @@ import pandas as pd
 
 
 def validate_time_column(csv_file: Path) -> bool:
-    """Verifica se il file CSV contiene la colonna 'time'."""
+    """Check if the CSV file contains the 'time' column."""
     try:
         df_header = pd.read_csv(csv_file, nrows=0)
         return "time" in df_header.columns
     except Exception as e:
-        print(f"Errore durante la lettura di {csv_file.name}: {e}")
+        print(f"Error reading {csv_file.name}: {e}")
         return False
 
 
 def load_csv_files(input_dir: Path) -> list[pd.DataFrame]:
-    """Carica tutti i file CSV validi dalla cartella di input."""
+    """Load all valid CSV files from the input directory."""
     csv_files = sorted(input_dir.glob("*.csv"))
 
     if not csv_files:
-        print(f"Errore: nessun file CSV trovato in {input_dir}")
+        print(f"Error: no CSV files found in {input_dir}")
         sys.exit(1)
 
     dfs = []
@@ -40,33 +40,33 @@ def load_csv_files(input_dir: Path) -> list[pd.DataFrame]:
     for csv_file in csv_files:
         if not validate_time_column(csv_file):
             print(
-                f"Warning: {csv_file.name} non contiene la colonna 'time' e non verrà processato"
+                f"Warning: {csv_file.name} does not contain the 'time' column and will not be processed"
             )
             continue
 
         try:
-            print(f"Lettura: {csv_file.name}...")
+            print(f"Reading: {csv_file.name}...")
             df = pd.read_csv(csv_file, parse_dates=["time"])
             dfs.append(df)
-            print(f"  -> {len(df)} righe caricate")
+            print(f"  -> {len(df)} rows loaded")
         except Exception as e:
-            print(f"Errore durante il caricamento di {csv_file.name}: {e}")
+            print(f"Error loading {csv_file.name}: {e}")
             continue
 
     return dfs
 
 
 def merge_dataframes(dfs: list[pd.DataFrame]) -> pd.DataFrame:
-    """Esegue il merge di tutti i DataFrame usando outer join sulla colonna 'time'."""
+    """Merge all DataFrames using outer join on the 'time' column."""
     if not dfs:
-        print("Errore: nessun DataFrame valido da unire")
+        print("Error: no valid DataFrame to merge")
         sys.exit(1)
 
-    print(f"\nMerge di {len(dfs)} file...")
+    print(f"\nMerging {len(dfs)} files...")
 
     merged = dfs[0]
     for i, df in enumerate(dfs[1:], start=2):
-        print(f"  Merge file {i}/{len(dfs)}...")
+        print(f"  Merging file {i}/{len(dfs)}...")
         merged = pd.merge(merged, df, on="time", how="outer")
 
     return merged
@@ -76,16 +76,16 @@ def interpolate_missing_values(
     df: pd.DataFrame, method: str = "linear"
 ) -> pd.DataFrame:
     """
-    Interpola i valori mancanti usando il metodo specificato.
+    Interpolate missing values using the specified method.
 
     Args:
-        df: DataFrame con i dati
-        method: Metodo di interpolazione ('linear', 'ffill', 'bfill', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic')
+        df: DataFrame with the data
+        method: Interpolation method ('linear', 'ffill', 'bfill', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic')
 
     Returns:
-        DataFrame con valori interpolati
+        DataFrame with interpolated values
     """
-    print(f"\nInterpolazione valori mancanti (metodo: {method})...")
+    print(f"\nInterpolating missing values (method: {method})...")
     df = df.sort_values("time").reset_index(drop=True)
 
     missing_before = df.isnull().sum().sum()
@@ -102,11 +102,11 @@ def interpolate_missing_values(
     missing_after = df.isnull().sum().sum()
     filled_count = missing_before - missing_after
 
-    print(f"  -> {filled_count} valori interpolati")
+    print(f"  -> {filled_count} values interpolated")
 
     if missing_after > 0:
         print(
-            f"  -> Warning: {missing_after} valori ancora mancanti (probabilmente ai bordi)"
+            f"  -> Warning: {missing_after} values still missing (probably at the edges)"
         )
 
     return df
@@ -114,20 +114,20 @@ def interpolate_missing_values(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Unifica file CSV meteo in un unico file CSV",
+        description="Merge weather CSV files into a single CSV file",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Metodi di interpolazione disponibili:
-    linear      - Interpolazione lineare (default)
-    ffill       - Forward fill (riempie con l'ultimo valore valido)
-    bfill       - Backward fill (riempie con il prossimo valore valido)
-    nearest     - Valore più vicino
-    zero        - Interpolazione a gradino zero
-    slinear     - Interpolazione lineare spline
-    quadratic   - Interpolazione quadratica spline
-    cubic       - Interpolazione cubica spline
+Available interpolation methods:
+    linear      - Linear interpolation (default)
+    ffill       - Forward fill (fills with the last valid value)
+    bfill       - Backward fill (fills with the next valid value)
+    nearest     - Nearest value
+    zero        - Zero step interpolation
+    slinear     - Linear spline interpolation
+    quadratic   - Quadratic spline interpolation
+    cubic       - Cubic spline interpolation
 
-Esempio:
+Example:
     python merge_meteo_csv.py /path/to/csv_folder merged_output.csv
     python merge_meteo_csv.py /path/to/csv_folder merged_output.csv --interpolation ffill
         """,
@@ -136,13 +136,13 @@ Esempio:
     parser.add_argument(
         "input_directory",
         type=str,
-        help="Percorso della cartella contenente i file CSV da unificare",
+        help="Path of the directory containing the CSV files to merge",
     )
 
     parser.add_argument(
         "output_filename",
         type=str,
-        help="Nome del file CSV di output (salvato nella cartella di input)",
+        help="Name of the output CSV file (saved in the input directory)",
     )
 
     parser.add_argument(
@@ -160,7 +160,7 @@ Esempio:
             "quadratic",
             "cubic",
         ],
-        help="Metodo di interpolazione per valori mancanti (default: linear)",
+        help="Interpolation method for missing values (default: linear)",
     )
 
     args = parser.parse_args()
@@ -168,24 +168,24 @@ Esempio:
     input_dir = Path(args.input_directory)
 
     if not input_dir.exists():
-        print(f"Errore: il percorso {input_dir} non esiste")
+        print(f"Error: the path {input_dir} does not exist")
         sys.exit(1)
 
     if not input_dir.is_dir():
-        print(f"Errore: {input_dir} non è una cartella")
+        print(f"Error: {input_dir} is not a directory")
         sys.exit(1)
 
-    print(f"Cartella di input: {input_dir.absolute()}")
-    print(f"File di output: {args.output_filename}")
-    print(f"Metodo interpolazione: {args.interpolation}\n")
+    print(f"Input directory: {input_dir.absolute()}")
+    print(f"Output file: {args.output_filename}")
+    print(f"Interpolation method: {args.interpolation}\n")
 
     dfs = load_csv_files(input_dir)
 
     if not dfs:
-        print("Errore: nessun file CSV valido trovato")
+        print("Error: no valid CSV files found")
         sys.exit(1)
 
-    print(f"\n{len(dfs)} file CSV validi trovati")
+    print(f"\n{len(dfs)} valid CSV files found")
 
     merged = merge_dataframes(dfs)
 
@@ -193,13 +193,13 @@ Esempio:
 
     output_path = input_dir / args.output_filename
 
-    print(f"\nSalvataggio in: {output_path}")
+    print(f"\nSaving to: {output_path}")
     merged.to_csv(output_path, index=False)
 
-    print(f"\nCompletato!")
-    print(f"  -> File unificato: {output_path}")
-    print(f"  -> Righe totali: {len(merged)}")
-    print(f"  -> Colonne: {list(merged.columns)}")
+    print(f"\nCompleted!")
+    print(f"  -> Merged file: {output_path}")
+    print(f"  -> Total rows: {len(merged)}")
+    print(f"  -> Columns: {list(merged.columns)}")
 
 
 if __name__ == "__main__":
