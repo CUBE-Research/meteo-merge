@@ -21,8 +21,13 @@ This Python script merges multiple CSV files containing weather data into a sing
 
 - Automatic merging of all CSV files in a folder
 - Missing value interpolation with various methods
-- Automatic time column handling
+- Automatic time column conversion to year, day, and decimal_time
 - Detailed operation logging
+
+**Note:** The input CSV files must have a `time` column with timestamps. This column is automatically converted to three separate columns in the output:
+- `year`: Year (e.g., 2024)
+- `day`: Day of year (1-365 or 1-366 for leap years)
+- `decimal_time`: Time in decimal format (e.g., 14.5 for 14:30:00)
 
 ## Prerequisites
 
@@ -291,6 +296,29 @@ time,temperature,humidity,pressure
 2024-01-01 02:00:00,14.9,82,1012.8
 ```
 
+## Output Format
+
+The output CSV file will have the `time` column replaced with three columns:
+
+- **`year`**: Year (integer, e.g., 2024)
+- **`day`**: Day of year (integer, 1-365 or 1-366 for leap years)
+- **`decimal_time`**: Time as decimal number (float, e.g., 14.5 for 14:30:00, 14.75 for 14:45:00)
+
+Example output:
+```csv
+year,day,decimal_time,temperature,humidity,pressure
+2024,1,0.0,15.5,78,1013.2
+2024,1,1.0,15.2,80,1013.0
+2024,1,2.0,14.9,82,1012.8
+```
+
+**Decimal Time Calculation:**
+- 00:00:00 → 0.0
+- 06:00:00 → 6.0
+- 12:30:00 → 12.5
+- 14:45:00 → 14.75
+- 23:59:59 → 23.999722
+
 ## Troubleshooting
 
 ### Problem: "python: command not found" (Linux)
@@ -379,7 +407,6 @@ rmdir /s venv
 The project requires the following Python libraries:
 
 - `pandas>=3.0.0` - Data manipulation
-- `textual>=8.0.0` - TUI framework
 - `scipy` - Scientific functions for interpolation
 
 ## Contributing

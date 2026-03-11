@@ -8,6 +8,12 @@ Usage:
 Example:
     python merge_meteo_csv.py /path/to/csv_folder merged_output.csv
     python merge_meteo_csv.py /path/to/csv_folder merged_output.csv --interpolation ffill
+
+Note:
+    The 'time' column is automatically converted to three separate columns:
+    - 'year': Year (e.g., 2024)
+    - 'day': Day of year (1-365 or 1-366 for leap years)
+    - 'decimal_time': Time in decimal format (e.g., 14.5 for 14:30:00)
 """
 
 import argparse
@@ -112,6 +118,45 @@ def interpolate_missing_values(
     return df
 
 
+def convert_time_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Convert the 'time' column to three separate columns: year, day, and decimal_time.
+
+    Args:
+        df: DataFrame with a 'time' column containing timestamps
+
+    Returns:
+        DataFrame with 'year', 'day', and 'decimal_time' columns instead of 'time'
+    """
+    print("\nConverting time column to year, day, and decimal_time...")
+
+    # Extract year
+    df["year"] = df["time"].dt.year
+
+    # Extract day of year (1-365 or 1-366 on lap years)
+    df["day"] = df["time"].dt.dayofyear
+
+    # Calculate decimal time (hour + minute/60 + second/3600)
+    df["decimal_time"] = (
+        df["time"].dt.hour
+        + df["time"].dt.minute / 60
+        + df["time"].dt.second / 3600
+    )
+
+    # Remove the original time column
+    df = df.drop(columns=["time"])
+
+    # Reorder columns to put year, day, decimal_time first
+    cols = ["year", "day", "decimal_time"] + [
+        col for col in df.columns if col not in ["year", "day", "decimal_time"]
+    ]
+    df = df[cols]
+
+    print(f"  -> Time column converted to year, day, decimal_time")
+
+    return df
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Merge weather CSV files into a single CSV file",
@@ -190,6 +235,8 @@ Example:
     merged = merge_dataframes(dfs)
 
     merged = interpolate_missing_values(merged, method=args.interpolation)
+
+    merged = convert_time_columns(merged)
 
     output_path = input_dir / args.output_filename
 
