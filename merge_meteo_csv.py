@@ -88,11 +88,19 @@ def interpolate_missing_values(
 
     Args:
         df: DataFrame with the data
-        method: Interpolation method ('linear', 'ffill', 'bfill', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic')
+        method: Interpolation method ('none', 'linear', 'ffill', 'bfill', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic')
 
     Returns:
         DataFrame with interpolated values
     """
+    if method == "none":
+        print("\nSkipping interpolation (method: none)...")
+        df = df.sort_values("time").reset_index(drop=True)
+        missing_count = df.isnull().sum().sum()
+        if missing_count > 0:
+            print(f"  -> {missing_count} missing values kept as NaN")
+        return df
+
     print(f"\nInterpolating missing values (method: {method})...")
     df = df.sort_values("time").reset_index(drop=True)
 
@@ -171,6 +179,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Available interpolation methods:
+    none        - No interpolation (keeps missing values as NaN)
     linear      - Linear interpolation (default)
     ffill       - Forward fill (fills with the last valid value)
     bfill       - Backward fill (fills with the next valid value)
@@ -204,6 +213,7 @@ Example:
         type=str,
         default="linear",
         choices=[
+            "none",
             "linear",
             "ffill",
             "bfill",

@@ -256,6 +256,11 @@ python merge_meteo_csv.py ./data merged.csv --interpolation ffill
 python merge_meteo_csv.py /path/to/csv_folder output.csv -i cubic
 ```
 
+#### Without interpolation (keep missing values):
+```bash
+python merge_meteo_csv.py ./data merged.csv --interpolation none
+```
+
 #### Show help:
 ```bash
 python merge_meteo_csv.py --help
@@ -265,6 +270,7 @@ python merge_meteo_csv.py --help
 
 | Method | Description | Recommended Use |
 |--------|-------------|-----------------|
+| `none` | No interpolation (keeps missing values as NaN) | When you want to preserve original gaps in data |
 | `linear` | Linear interpolation (default) | Data with linear trend, small gap coverage |
 | `ffill` | Forward fill (fills with last valid value) | Step-wise data, sensors that maintain value |
 | `bfill` | Backward fill (fills with next valid value) | Complementary to ffill |
