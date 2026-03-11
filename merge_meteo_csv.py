@@ -10,9 +10,11 @@ Example:
     python merge_meteo_csv.py /path/to/csv_folder merged_output.csv --interpolation ffill
 
 Note:
-    The 'time' column is automatically converted to three separate columns:
+    The 'time' column is automatically converted to five separate columns:
     - 'year': Year (e.g., 2024)
     - 'day': Day of year (1-365 or 1-366 for leap years)
+    - 'hour': Hour of day (0-23)
+    - 'minute': Minute of hour (0-59)
     - 'decimal_time': Time in decimal format (e.g., 14.5 for 14:30:00)
 """
 
@@ -120,21 +122,27 @@ def interpolate_missing_values(
 
 def convert_time_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Convert the 'time' column to three separate columns: year, day, and decimal_time.
+    Convert the 'time' column to five separate columns: year, day, hour, minute, and decimal_time.
 
     Args:
         df: DataFrame with a 'time' column containing timestamps
 
     Returns:
-        DataFrame with 'year', 'day', and 'decimal_time' columns instead of 'time'
+        DataFrame with 'year', 'day', 'hour', 'minute', and 'decimal_time' columns instead of 'time'
     """
-    print("\nConverting time column to year, day, and decimal_time...")
+    print("\nConverting time column to year, day, hour, minute, and decimal_time...")
 
     # Extract year
     df["year"] = df["time"].dt.year
 
-    # Extract day of year (1-365 or 1-366 on lap years)
+    # Extract day of year (1-365 or 1-366)
     df["day"] = df["time"].dt.dayofyear
+
+    # Extract hour (0-23)
+    df["hour"] = df["time"].dt.hour
+
+    # Extract minute (0-59)
+    df["minute"] = df["time"].dt.minute
 
     # Calculate decimal time (hour + minute/60 + second/3600)
     df["decimal_time"] = (
@@ -146,13 +154,13 @@ def convert_time_columns(df: pd.DataFrame) -> pd.DataFrame:
     # Remove the original time column
     df = df.drop(columns=["time"])
 
-    # Reorder columns to put year, day, decimal_time first
-    cols = ["year", "day", "decimal_time"] + [
-        col for col in df.columns if col not in ["year", "day", "decimal_time"]
+    # Reorder columns to put year, day, hour, minute, decimal_time first
+    cols = ["year", "day", "hour", "minute", "decimal_time"] + [
+        col for col in df.columns if col not in ["year", "day", "hour", "minute", "decimal_time"]
     ]
     df = df[cols]
 
-    print(f"  -> Time column converted to year, day, decimal_time")
+    print(f"  -> Time column converted to year, day, hour, minute, decimal_time")
 
     return df
 
